@@ -24,8 +24,7 @@ class Config:
     GREY = (128, 128, 128)
     WHITE = (255, 255, 255)
     FPS = 30
-    MAX_GRAVITY = -3
-    BG_SPEED = 0.3
+    BG_SPEED = 1
 
 
 
@@ -67,15 +66,12 @@ class PlayerSprite(BaseSprite):
             'spritesheet': Spritesheet("res/player.png"),
         }
         super().__init__(game, x, y, groups=game.players, layer=1, **img_data, **kwargs)
-        self.y_velocity = Config.MAX_GRAVITY
-        self.speed = 5
-        self.standing = False
+        self.speed = 3
         self.color = Config.RED
         self.anim_counter = 0
         self.animation_frames = [0, 32]
         self.current_frame = 0
         self.animation_duration = 30
-        self.jump_force = 10
         
 
     def animate(self, x_diff):
@@ -90,14 +86,8 @@ class PlayerSprite(BaseSprite):
     
     def update(self):
         self.handle_movement()
-        self.rect.y = self.rect.y - self.y_velocity
         self.check_collision()
-        self.y_velocity = max(self.y_velocity - 0.5, Config.MAX_GRAVITY)
 
-    def jump(self):
-        if self.standing:
-            self.y_velocity = self.jump_force
-            self.standing = False
 
     def handle_movement(self):
         keys = pygame.key.get_pressed()
@@ -105,8 +95,10 @@ class PlayerSprite(BaseSprite):
             self.rect.x = self.rect.x - self.speed
         if keys[pygame.K_RIGHT]:
             self.rect.x = self.rect.x + self.speed
-        if keys[pygame.K_SPACE]:
-            self.jump()
+        if keys[pygame.K_UP]:
+            self.rect.y = self.rect.y - self.speed
+        if keys[pygame.K_DOWN]:
+            self.rect.y = self.rect.y + self.speed
         self.update_camera()
 
 
@@ -128,9 +120,7 @@ class PlayerSprite(BaseSprite):
 
 
     def is_standing(self, hit):
-        if self.y_velocity > 0:
-            return False
-        if abs(hit.rect.top - self.rect.bottom) > abs(Config.MAX_GRAVITY):
+        if abs(hit.rect.top - self.rect.bottom) > abs(self.speed):
             return False
         if abs(self.rect.left - hit.rect.right) <= abs(self.speed):
             return False
@@ -139,9 +129,7 @@ class PlayerSprite(BaseSprite):
         return True
 
     def hit_head(self, hit):
-        if self.y_velocity < 0:
-            return False
-        if abs(self.rect.top - hit.rect.bottom) > abs(self.jump_force):
+        if abs(self.rect.top - hit.rect.bottom) > abs(self.speed):
             return False
         if abs(self.rect.left - hit.rect.right) <= abs(self.speed):
             return False
@@ -157,7 +145,6 @@ class PlayerSprite(BaseSprite):
                 self.rect.bottom = hit.rect.top
                 break
             if self.hit_head(hit):
-                self.y_velocity = 0
                 self.rect.top = hit.rect.bottom
                 break
 
@@ -168,11 +155,6 @@ class PlayerSprite(BaseSprite):
                 self.rect.left = hit.rect.right
             else:
                 self.rect.right = hit.rect.left
-
-        self.rect.y += 1
-        hits = pygame.sprite.spritecollide(self, self.game.ground, False)
-        self.standing = True if hits else False
-        self.rect.y -= 1
 
 
 class GroundSprite(BaseSprite):
@@ -225,6 +207,7 @@ class Game:
         if self.bg_x > 0:
             second_x -= 2*Config.WINDOW_WIDTH
         self.screen.blit(tmp_bg, (second_x, 0))
+
         self.all_sprites.draw(self.screen)
         pygame.display.update()
 
@@ -235,9 +218,29 @@ class Game:
             self.draw()
             self.clock.tick(Config.FPS)
 
+    def welcome(self):
+        counter = 0
+        
+        while True:
+            self.screen.fill(Config.RED)
+            display_text = self.font.render('Press Space to Start...', False, (0, 0, 0))
+            self.screen.blit(display_text, (200, 50))
+            counter_text = self.font.render(f'{counter}', False, (0, 0, 0))
+            self.screen.blit(counter_text, (200, 100))
+            pygame.display.flip()
+            self.clock.tick(Config.FPS)
+            counter += 1
+
+            pygame.event.get()
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_SPACE]:
+                break
     
 def main():
     g = Game()
+
+    g.welcome()
+
     g.new()
 
     g.game_loop()

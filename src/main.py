@@ -1,3 +1,4 @@
+from asyncio.base_futures import _FINISHED
 import pygame
 
 import sys
@@ -17,7 +18,7 @@ class Spritesheet:
 class Config:
     TILE_SIZE = 32
     WINDOW_WIDTH = TILE_SIZE * 20
-    WINDOW_HEIGHT = TILE_SIZE * 10
+    WINDOW_HEIGHT = TILE_SIZE * 11
     BLACK = (0, 0, 0)
     RED = (255, 0, 0)
     GREEN = (0, 255, 0)
@@ -92,7 +93,7 @@ class PlayerSprite(BaseSprite):
         self.handle_movement()
         self.rect.y = self.rect.y - self.y_velocity
         self.check_collision()
-        self.y_velocity = max(self.y_velocity - 0.5, Config.MAX_GRAVITY)
+        self.y_velocity = max(self.y_velocity - 0.75, Config.MAX_GRAVITY)
 
     def jump(self):
         if self.standing:
@@ -178,7 +179,7 @@ class PlayerSprite(BaseSprite):
 class GroundSprite(BaseSprite):
     def __init__(self, game, x, y):
         super().__init__(game, x, y, groups=game.ground, layer=0)
-        self.image.fill(Config.GREEN)
+        self.image.fill(Config.WHITE)
 
 
 class Game:
@@ -188,10 +189,9 @@ class Game:
         self.font = pygame.font.Font(None, 30)
         self.screen = pygame.display.set_mode( (Config.WINDOW_WIDTH, Config.WINDOW_HEIGHT) ) 
         self.clock = pygame.time.Clock()
-        self.bg = pygame.image.load("res/bg-small.png")
+        self.bg = pygame.image.load("res/bg-city.png")
         self.bg_x = 0
 
-    
     def load_map(self, mapfile):
         with open(mapfile, "r") as f:
             for (y, lines) in enumerate(f.readlines()):
@@ -200,7 +200,8 @@ class Game:
                         GroundSprite(self, x, y)
                     if c == "p":
                         self.player = PlayerSprite(self, x, y)
-
+                    
+                        
     def new(self):
         self.playing = True
 
